@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roleta Personalizável</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f9;
+        }
+
+        .roleta-container {
+            margin: 50px auto;
+            width: 300px;
+            height: 300px;
+            position: relative;
+        }
+
+        .roleta {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 5px solid #333;
+            position: relative;
+        }
+
+        .seta {
+            width: 0;
+            height: 0;
+            border-left: 15px solid transparent;
+            border-right: 15px solid transparent;
+            border-bottom: 20px solid #e63946;
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        #btn-rodar {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #4caf50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        #btn-rodar:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <h1>Roleta Personalizável</h1>
+    <p>Adicione suas opções separadas por vírgulas:</p>
+    <input type="text" id="opcoes" placeholder="Ex: Opção 1, Opção 2, Opção 3" style="width: 80%; padding: 10px;">
+    <div class="roleta-container">
+        <div class="seta"></div>
+        <canvas id="roleta" class="roleta"></canvas>
+    </div>
+    <button id="btn-rodar">Rodar</button>
+    <script>
+        const canvas = document.getElementById('roleta');
+        const ctx = canvas.getContext('2d');
+        const button = document.getElementById('btn-rodar');
+        const input = document.getElementById('opcoes');
+        canvas.width = canvas.height = 300;
+
+        let options = ["Opção 1", "Opção 2", "Opção 3", "Opção 4"];
+        let rotation = 0;
+        let isSpinning = false;
+
+        function drawWheel() {
+            const total = options.length;
+            const angle = 2 * Math.PI / total;
+
+            for (let i = 0; i < total; i++) {
+                ctx.beginPath();
+                ctx.moveTo(150, 150);
+                ctx.arc(150, 150, 150, i * angle, (i + 1) * angle);
+                ctx.fillStyle = i % 2 === 0 ? '#feca57' : '#ff6b6b';
+                ctx.fill();
+                ctx.strokeStyle = '#333';
+                ctx.stroke();
+                ctx.closePath();
+
+                ctx.save();
+                ctx.translate(150, 150);
+                ctx.rotate(i * angle + angle / 2);
+                ctx.textAlign = 'center';
+                ctx.fillStyle = '#333';
+                ctx.font = '14px Arial';
+                ctx.fillText(options[i], 100, 10);
+                ctx.restore();
+            }
+        }
+
+        function spinWheel() {
+            if (isSpinning) return;
+            isSpinning = true;
+
+            const randomAngle = Math.random() * 2 * Math.PI + 10 * 2 * Math.PI; // 10 giros completos + aleatório
+            const spinTime = 5000; // tempo de giro em milissegundos
+
+            let start = null;
+
+            function animate(timestamp) {
+                if (!start) start = timestamp;
+                const progress = timestamp - start;
+                const easing = (t) => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t; // ease-out
+                const rotationStep = easing(progress / spinTime) * randomAngle;
+
+                rotation = rotationStep % (2 * Math.PI);
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.save();
+                ctx.translate(150, 150);
+                ctx.rotate(rotation);
+                ctx.translate(-150, -150);
+                drawWheel();
+                ctx.restore();
+
+                if (progress < spinTime) {
+                    requestAnimationFrame(animate);
+                } else {
+                    isSpinning = false;
+                    const selected = Math.floor((2 * Math.PI - rotation) / (2 * Math.PI / options.length)) % options.length;
+                    alert(`Resultado: ${options[selected]}`);
+                }
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        button.addEventListener('click', () => {
+            const inputValues = input.value.trim();
+            if (inputValues) {
+                options = inputValues.split(',').map(o => o.trim()).filter(o => o);
+            }
+            drawWheel();
+            spinWheel();
+        });
+
+        drawWheel();
+    </script>
+</body>
+</html>
